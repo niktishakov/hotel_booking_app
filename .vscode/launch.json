@@ -1,0 +1,30 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Mobile (Debug)",
+            "request": "launch",
+            "type": "dart",
+            "program": "mobile/lib/main_dev.dart",
+            "flutterMode": "debug",
+            "args": [
+                "--flavor",
+                "dev"
+            ]
+        },
+        {
+            "name": "Mobile (Profile)",
+            "request": "launch",
+            "type": "dart",
+            "program": "mobile/lib/main_dev.dart",
+            "flutterMode": "profile",
+        },
+        {
+            "name": "Mobile (Release)",
+            "request": "launch",
+            "type": "dart",
+            "program": "mobile/lib/main_dev.dart",
+            "flutterMode": "release",
+        }
+    ]
+}
