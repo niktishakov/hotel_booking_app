@@ -1,126 +1,166 @@
+import 'dart:async';
+
+import 'package:core/core.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:auto_route/auto_route.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:hotel_booking_app/core/core.dart';
+import 'package:hotel_booking_app/core/extensions/extensions.dart';
+import 'package:hotel_booking_app/navigation/hb.route_observer.dart';
+import 'package:hotel_booking_app/screens/favourites/model/favourites_bloc.dart';
+import 'package:hotel_booking_app/screens/overview/model/overview_cubit.dart';
+import 'package:hotel_booking_app/services/vibration_service.dart';
+import 'package:hotel_booking_app/utils/ai_scroll_behaviour.dart';
+import 'package:hotel_booking_app/utils/logger_interceptor.dart';
+import 'package:hotel_booking_app/utils/theme/export.dart';
+import 'package:hydrated_bloc/hydrated_bloc.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:provider/single_child_widget.dart';
 
-void main() {
-  runApp(const MyApp());
+import 'navigation/router_service.dart';
+import 'screens/material_app_overlay_notifier.dart';
+import 'services/toast.service.dart';
+
+part 'main.part.dart';
+
+final screenNavigatorKey = GlobalKey<NavigatorState>();
+
+void main() async {
+  await runZonedGuarded(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+
+    final aiApp = await buildApp();
+    runApp(aiApp);
+  }, (error, stackTrace) {
+    AiLogger("Dart").error("$error\nStack trace:\n$stackTrace");
+  });
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+Future<Widget> buildApp() async {
+  AiLogger.initialize(isReleaseMode: kReleaseMode);
 
-  // This widget is the root of your application.
+  final secrets = await Secrets.create();
+
+  HydratedBloc.storage = await HydratedStorage.build(
+    storageDirectory: await getApplicationDocumentsDirectory(),
+  );
+
+  await Hive.initFlutter();
+
+  // Handle Flutter framework errors
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details); // Optional: Show error in debug console
+    AiLogger("Flutter").error("${details.exceptionAsString()}\nStack trace:\n${details.stack}");
+  };
+
+  await VibrationService.init();
+
+  await Future.wait([
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]),
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge),
+  ]);
+
+  await RouterService.init();
+  await ToastService.init();
+
+  final overlayNotifier = MaterialAppOverlayNotifier();
+
+  final dio = Dio(
+    BaseOptions(
+      baseUrl: secrets.serpApiBaseUrl,
+      headers: {
+        'X-API-KEY': secrets.serpApiKey,
+        'Content-Type': 'application/json',
+      },
+    ),
+  )..interceptors.addAll([LoggerInterceptor()]);
+  final _restClient = RestClient(dio);
+  final _hotelApi = HotelApiDataSourceImpl(_restClient);
+  final _hotelRepo = HotelRepositoryImpl(_hotelApi);
+  final _getHotelsUsecase = GetHotelsUsecase(_hotelRepo);
+
+  final providers = [
+    BlocProvider<OverviewCubit>(
+      create: (context) => OverviewCubit(
+        getHotels: _getHotelsUsecase,
+      ),
+    ),
+    BlocProvider<FavouritesBloc>(
+      create: (context) => FavouritesBloc(),
+    ),
+    ChangeNotifierProvider<HbThemeProvider>(
+      create: (_) {
+        return HbThemeProvider(
+          ThemesHolder.findWhere(
+            themeKey: 'main',
+          ),
+        );
+      },
+    ),
+    ChangeNotifierProvider.value(value: overlayNotifier),
+  ];
+
+  return _HbApp(providers: providers);
+}
+
+class _HbApp extends StatefulWidget {
+  const _HbApp({
+    Key? key,
+    required this.providers,
+  }) : super(key: key);
+  final List<SingleChildWidget> providers;
+
+  @override
+  State<_HbApp> createState() => __AIAppState();
+}
+
+class __AIAppState extends State<_HbApp> {
+  @override
+  void initState() {
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
-}
+    return MultiBlocProvider(
+      providers: widget.providers,
+      child: Listen<HbThemeProvider>(builder: (context) {
+        return MaterialApp.router(
+          key: screenNavigatorKey,
+          debugShowCheckedModeBanner: false,
+          routerConfig: RouterService.instance.router.config(
+            navigatorObservers: () => [HbRouteObserver()],
+          ),
+          builder: (context, child) {
+            FToastBuilder();
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+            return ScrollConfiguration(
+              behavior: const AiScrollBehaviour(),
+              child: _MaterialAppLevelOverlay(
+                notifier: find<MaterialAppOverlayNotifier>(context),
+                child: Overlay(
+                  initialEntries: [
+                    if (child != null)
+                      OverlayEntry(
+                        builder: (context) {
+                          return MediaQuery(
+                            data: context.mediaQuery.copyWith(textScaler: const TextScaler.linear(1.0)),
+                            child: child,
+                          );
+                        },
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      }),
     );
   }
 }

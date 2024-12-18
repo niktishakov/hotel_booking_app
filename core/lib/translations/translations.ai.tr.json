@@ -1,0 +1,72 @@
+{
+  "en_US": {
+    "common": {
+      "buttonActions": {
+        "letsDoIt": "Let's do it",
+        "next": "Continue",
+        "retry": "Retry",
+        "loadMore": "Load More",
+        "loadPrev": "Load Previous"
+      },
+      "appLaunch": {
+        "appNotInstalledError": {
+          "title": "App not installed",
+          "body": "Please install the app you'd like to share with."
+        }
+      },
+      "errors": {
+        "generic": "Something went wrong. Please make sure you have an internet connection and try again.",
+        "emailClient": "We're sorry but we can't find this devices email client, email <email> from a web browser instead.",
+        "phoneCall": "We're sorry but this device doesn't support phone calls, please ring 0330 100 7676 from your mobile phone or landline instead."
+      },
+      "shareLink": {
+        "copyButtonLabel": {
+          "copy": "Copy link",
+          "copied": "Link copied"
+        },
+        "actionButtonLabel": "More sharing options...",
+        "socialOptions": {
+          "whatsApp": "WhatsApp",
+          "sms": "Text",
+          "messenger": "Messenger",
+          "email": "Email"
+        }
+      }
+    },
+    "invite": {
+      "firstPage": {
+        "title": "Unlock More Requests",
+        "description": "Earn requests by inviting your friends or upgrade to PRO to get unlimited access.",
+        "upgrade": "Upgrade",
+        "inviteFriends": "Invite Friends"
+      },
+      "secondPage": {
+        "title": "Invite Your Friends",
+        "friendsJoined": "Friends Joined",
+        "requestsEarned": "Requests Earned",
+        "shareInviteLink": "Share Invite Link"
+      },
+      "notify": {
+        "shared": "Invite sent! You will get coins as soon as a friend installs the app",
+        "copied": "App Link Copied!"
+      }
+    },
+    "chat": {
+      "header": {
+        "policyToggle": {
+          "playAnswer": "Play Answer",
+          "text": "Text",
+          "voice": "Voice"
+        }
+      }
+    },
+    "paywallEntry": {
+      "noPaywallFound": "No paywall found",
+      "failureView": {
+        "title": "Loading paywall",
+        "subtitle": "Failed",
+        "action": "Retry"
+      }
+    }
+  }
+}
