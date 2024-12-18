@@ -5,8 +5,9 @@ A Flutter application for hotel bookings with a separate core module.
 ## Prerequisites
 
 Before you begin, ensure you have the following installed:
-- Flutter SDK (>=3.4.0)
+- Flutter SDK (>=3.24.0)
 - Dart SDK (>=3.4.3)
+- XCode (>= 16.0) (recommended)
 - [Flutter Version Manager (FVM)](https://fvm.app/) (recommended)
 
 ## Project Structure
@@ -81,12 +82,12 @@ root/
 
 
 1. **Scalable State Management**
-   - BLoC pattern for predictable state changes
-   - Persistent state storage with `HydratedBloc`
+- BLoC pattern for predictable state changes
+  - Persistent state storage with `HydratedBloc`
 
-2. **Configuration Management**
-   - Secure secrets handling
-   - API key management
+3. **Configuration Management**
+- Secure secrets handling
+- API key management
 
 3. **Developer Experience**
 - Comprehensive logging system
@@ -145,24 +146,6 @@ OR
 ```bash
 cd mobile
 rps run
-```
-
-## Building for IPA
-
-```bash
-cd mobile
-rps build
-```
-
-## Available Scripts
-
-### Mobile App
-```bash
-# Generate code
-dart run build_runner watch
-
-# Run app in development
-flutter run -t lib/main.dart
 ```
 
 ## Assets
