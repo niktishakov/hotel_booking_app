@@ -13,6 +13,8 @@ Before you begin, ensure you have the following installed:
 
 The application follows a modular architecture with two main components:
 
+
+```
 root/
 ├── core/ # Pure Dart module for core features
 │ └── lib/
@@ -30,6 +32,7 @@ root/
 ├── screens/ # UI screens and their models
 ├── services/ # App services
 └── utils/ # App utilities
+```
 
 
 ### Technical Stack
