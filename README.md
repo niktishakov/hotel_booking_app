@@ -10,6 +10,14 @@ Before you begin, ensure you have the following installed:
 - XCode (>= 16.0) (recommended)
 - [Flutter Version Manager (FVM)](https://fvm.app/) (recommended)
 
+
+## Overview
+
+
+https://github.com/user-attachments/assets/700032f8-5921-4a56-a5c1-0c25ca8553f6
+
+
+
 ## Project Structure
 
 The application follows a modular architecture with two main components:
